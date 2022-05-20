@@ -16,8 +16,8 @@ const int motor_pin = 9;
 const int motor_min = 0;
 const int motor_max = 180;
 
-int height_goal = 250; // in mm
-int tube_height = 500; // in mm 
+double height_goal = 250; // in mm
+double tube_height = 500; // in mm 
 double last_err = 0;
 double cum_err = 0;
 double rate_err = 0;
@@ -25,12 +25,12 @@ double rate_err = 0;
 double motor_out = 0;
 
 double PID_constants [3] = {0, 0, 0}; // respectively for p, i, d
-int ball_height;
+double ball_height;
 double motor_correction;
 unsigned long last_time = 0;
 unsigned long curr_time = 0;
 
-double PID_cycle (int distance, double d_time)
+double PID_cycle (double distance, double d_time)
 {
 
   double err = height_goal - distance;
@@ -46,7 +46,7 @@ double PID_cycle (int distance, double d_time)
   rate_err = (err - last_err) / d_time;
   double d_control = rate_err * PID_constants[2];
 
-  double pid_out = int(p_control + 0 + 0);
+  double pid_out = p_control + 0.0 + d_control;
   last_err = err;
   delay(1);
   return pid_out;
@@ -55,11 +55,11 @@ double PID_cycle (int distance, double d_time)
 void updatePIDControls ()
 {
   int p_pot = analogRead(PPotControl);
-  double p_value = double(p_pot) / 1023.0f * 0.001f;
+  double p_value = double(p_pot) / 1023.0 * 0.001;
   int i_pot = analogRead(IPotControl);
-  double i_value = double(i_pot) / 1023.0f * 0.001f;
+  double i_value = double(i_pot) / 1023.0 * 0.001;
   int d_pot = analogRead(DPotControl);
-  double d_value = double(d_pot) / 1023.0f * 0.001f;
+  double d_value = double(d_pot) / 1023.0 * 0.001;
 
   PID_constants[0] = p_value;
   PID_constants[1] = i_value;
@@ -68,12 +68,12 @@ void updatePIDControls ()
 
 void printPIDConstants ()
 {
-  Serial.print("p: ");
-  Serial.print(PID_constants[0]);
-  Serial.print(" i: ");
-  Serial.print(PID_constants[1]);
-  Serial.print(" d: ");
-  Serial.println(PID_constants[2]);
+  Serial.print(" p:");
+  Serial.print(PID_constants[0] * 10000);
+  Serial.print(" i:");
+  Serial.print(PID_constants[1] * 10000);
+  Serial.print(" d:");
+  Serial.println(PID_constants[2] * 10000);
 }
 
 void printForGraph ()
@@ -83,11 +83,12 @@ void printForGraph ()
   Serial.print(" height:");
   Serial.print (ball_height);
   Serial.print (" motor_out:");
-  Serial.print (motor_out * 2); 
+  Serial.print (map(motor_out * 2,30, 50, 30, 400)); 
   Serial.print (" PID_out:");
   Serial.print (min(motor_correction, 500));
-  Serial.print (" P_param:");
-  Serial.println(PID_constants[0] * 10000);
+//  Serial.print (" P_param:");
+//  Serial.println(PID_constants[0] * 10000);
+  printPIDConstants();
 }
 
 void setup() {
@@ -120,7 +121,7 @@ void loop() {
   if (measure.RangeStatus != 4)
   {
     
-    int distance = measure.RangeMilliMeter - 35; // in mm
+    double distance = measure.RangeMilliMeter - 35; // in mm
    
     ball_height = tube_height - distance;
     curr_time = millis();
@@ -134,7 +135,7 @@ void loop() {
   }
   
   int pot_value = analogRead(heightPotPin);
-  // height_goal = int(double(pot_value) * 500 / 1023);
+   height_goal = double(pot_value) * 500.0 / 1023.0;
   
   updatePIDControls();
   printForGraph ();
